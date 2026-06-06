@@ -13,6 +13,7 @@ type Client struct {
 	accessToken    string
 	refreshToken   string
 	onRefreshToken func(string, string)
+	beforeRefresh  BeforeTokenRefreshFunc
 }
 
 func New(opts ...Option) *Client {
@@ -68,6 +69,11 @@ func (w *Client) SetRefreshToken(token string) *Client {
 
 func (w *Client) SetOnRefreshToken(fn func(accessToken string, refreshToken string)) *Client {
 	w.onRefreshToken = fn
+	return w
+}
+
+func (w *Client) SetBeforeTokenRefresh(fn BeforeTokenRefreshFunc) *Client {
+	w.beforeRefresh = fn
 	return w
 }
 

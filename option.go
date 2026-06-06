@@ -45,3 +45,9 @@ func WithOnRefreshToken(fn func(accessToken string, refreshToken string)) Option
 		w.SetOnRefreshToken(fn)
 	}
 }
+
+func WithBeforeTokenRefresh(fn BeforeTokenRefreshFunc) Option {
+	return func(w *Client) {
+		w.SetBeforeTokenRefresh(fn)
+	}
+}

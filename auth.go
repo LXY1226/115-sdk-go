@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"net/http"
+	"time"
 )
 
 type AuthDeviceCodeResp struct {
@@ -78,17 +79,43 @@ func (c *Client) CodeToToken(ctx context.Context, uid, codeVerifier string) (*Co
 type RefreshTokenResp CodeToTokenResp
 
 func (c *Client) RefreshToken(ctx context.Context) (*RefreshTokenResp, error) {
+	token, err := c.getRefreshToken(ctx)
+	if err != nil {
+		return nil, err
+	}
+	c.SetAccessToken(token.AccessToken)
+	c.SetRefreshToken(token.RefreshToken)
+	if c.onRefreshToken != nil {
+		c.onRefreshToken(token.AccessToken, token.RefreshToken)
+	}
+	return &RefreshTokenResp{
+		AccessToken:  token.AccessToken,
+		RefreshToken: token.RefreshToken,
+		ExpiresIn:    token.ExpiresIn,
+	}, nil
+}
+
+func (c *Client) getRefreshToken(ctx context.Context) (TokenValue, error) {
+	if c.beforeRefresh != nil {
+		token, err := c.beforeRefresh(ctx)
+		if err != nil {
+			return TokenValue{}, err
+		}
+		if token != nil {
+			return *token, nil
+		}
+	}
 	var resp RefreshTokenResp
 	_, err := c.passportRequest(ctx, ApiRefreshToken, http.MethodPost, &resp, ReqWithForm(Form{
 		"refresh_token": c.refreshToken,
 	}))
 	if err != nil {
-		return nil, err
+		return TokenValue{}, err
 	}
-	c.SetAccessToken(resp.AccessToken)
-	c.SetRefreshToken(resp.RefreshToken)
-	if c.onRefreshToken != nil {
-		c.onRefreshToken(resp.AccessToken, resp.RefreshToken)
-	}
-	return &resp, err
+	token := TokenValue{
+		AccessToken:  resp.AccessToken,
+		RefreshToken: resp.RefreshToken,
+		ExpiresIn:    resp.ExpiresIn,
+	}.WithRefreshTime(time.Now())
+	return token, nil
 }
