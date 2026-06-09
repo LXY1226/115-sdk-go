@@ -97,7 +97,10 @@ func (c *Client) RefreshToken(ctx context.Context) (*RefreshTokenResp, error) {
 
 func (c *Client) getRefreshToken(ctx context.Context) (TokenValue, error) {
 	if c.beforeRefresh != nil {
-		token, err := c.beforeRefresh(ctx)
+		token, err := c.beforeRefresh(ctx, TokenValue{
+			AccessToken:  c.accessToken,
+			RefreshToken: c.refreshToken,
+		})
 		if err != nil {
 			return TokenValue{}, err
 		}

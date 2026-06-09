@@ -27,4 +27,4 @@ func (t TokenValue) WithRefreshTime(now time.Time) TokenValue {
 	return t
 }
 
-type BeforeTokenRefreshFunc func(context.Context) (*TokenValue, error)
+type BeforeTokenRefreshFunc func(context.Context, TokenValue) (*TokenValue, error)
